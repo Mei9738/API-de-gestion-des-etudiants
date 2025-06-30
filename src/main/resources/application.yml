@@ -1,0 +1,26 @@
+server:
+  port: ${P2_PORT:8077}
+
+spring:
+  datasource:
+    url: ${P2_DB_URL:jdbc:postgresql://localhost:5432/p2-db}
+    username: ${P2_DB_USERNAME:postgres}
+    password: ${P2_DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+app:
+  service:
+    notification:
+      hostname: ${P2_NOTIFICATION_SERVICE_HOSTNAME:http://localhost:8076}
