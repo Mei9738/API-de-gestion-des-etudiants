@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.project2.config.Messages;
 import org.example.project2.exception.TechnicalException;
 import org.example.project2.util.consts.GlobalConstants;
-import org.springframework.hateoas.mediatype.problem.Problem;
 import org.springframework.http.HttpStatus;
 
 @Slf4j
@@ -13,20 +12,16 @@ import org.springframework.http.HttpStatus;
 public class BaseResponseEntityExceptionHandler {
     private final Messages messages;
 
-    Problem buildProblem(Exception e, HttpStatus status) {
-        String title = e.getClass()
-                .getSimpleName();
-        String detail = e.getMessage();
+    CustomErrorResponse buildErrorResponse(Exception e, HttpStatus status) {
+        String title = e.getClass().getSimpleName();
+        String code = e.getMessage();
         if (e instanceof TechnicalException) {
-            detail = messages.get(GlobalConstants.ERROR_WS_TECHNICAL);
+            code = GlobalConstants.ERROR_WS_TECHNICAL;
         }
-        return buildProblem(title, status, detail);
+        return buildErrorResponse(title, status, code);
     }
 
-    Problem buildProblem(String title, HttpStatus status, String detail) {
-        return Problem.create()
-                .withTitle(title)
-                .withStatus(status)
-                .withDetail(detail);
+    CustomErrorResponse buildErrorResponse(String title, HttpStatus status, String code) {
+        return new CustomErrorResponse(code, status.value(), title);
     }
 }

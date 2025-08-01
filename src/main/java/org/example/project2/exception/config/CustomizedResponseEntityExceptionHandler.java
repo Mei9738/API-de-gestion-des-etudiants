@@ -6,12 +6,11 @@ import org.example.project2.config.Messages;
 import org.example.project2.exception.CustomFeignClientException;
 import org.example.project2.exception.FunctionalException;
 import org.example.project2.exception.TechnicalException;
-import org.springframework.hateoas.mediatype.problem.Problem;
+import org.example.project2.exception.EmailConflictException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 @Slf4j
@@ -21,26 +20,37 @@ public class CustomizedResponseEntityExceptionHandler extends BaseResponseEntity
     }
 
     @ExceptionHandler(TechnicalException.class)
-    @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR)
-    @ResponseBody
-    public Problem onTechnicalException(TechnicalException e) {
+    public ResponseEntity<CustomErrorResponse> onTechnicalException(TechnicalException e) {
         log.error(e.getMessage(), e);
-        return buildProblem(e, HttpStatus.INTERNAL_SERVER_ERROR);
+        CustomErrorResponse errorResponse = buildErrorResponse(e, HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
     @ExceptionHandler(FunctionalException.class)
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    public Problem onFunctionalException(FunctionalException e) {
+    public ResponseEntity<CustomErrorResponse> onFunctionalException(FunctionalException e) {
         log.error(e.getMessage(), e);
-        return buildProblem(e, HttpStatus.BAD_REQUEST);
+        CustomErrorResponse errorResponse = buildErrorResponse(e, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(CustomFeignClientException.class)
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    public Problem onEsgClientError(CustomFeignClientException e) {
+    public ResponseEntity<CustomErrorResponse> onEsgClientError(CustomFeignClientException e) {
         log.error(e.getMessage(), e);
-        return buildProblem(e.getTitle(), HttpStatus.BAD_REQUEST, e.getMsg());
+        CustomErrorResponse errorResponse = buildErrorResponse(e.getTitle(), HttpStatus.BAD_REQUEST, e.getMsg());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(EmailConflictException.class)
+    public ResponseEntity<CustomErrorResponse> onEmailConflictException(EmailConflictException e) {
+        log.error(e.getMessage(), e);
+        CustomErrorResponse errorResponse = buildErrorResponse(e, HttpStatus.CONFLICT);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<CustomErrorResponse> onGenericException(Exception e) {
+        log.error("Unexpected error occurred: {}", e.getMessage(), e);
+        CustomErrorResponse errorResponse = buildErrorResponse("internal.server.error", HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
