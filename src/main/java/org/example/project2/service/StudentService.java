@@ -33,8 +33,8 @@ public class StudentService {
     private final StudentMapper studentMapper;
     private final Messages messages;
 
-    public List<StudentDto> getAll(int page, int size, String sort) {
-        log.info("Start Service: getAll with page={}, size={}, sort={}", page, size, sort);
+    public List<StudentDto> getAll(int page, int size, String sort, String search) {
+        log.info("Start Service: getAll with page={}, size={}, sort={}, search={}", page, size, sort, search);
         
         // Create pageable for pagination
         Pageable pageable = PageRequest.of(page, size);
@@ -54,13 +54,24 @@ public class StudentService {
             }
         }
         
-        final var result = studentRepository.findAll(pageable)
-                .getContent()
-                .stream()
-                .map(studentMapper::toDto)
-                .toList();
-        log.info("End Service: getAll with {} students", result.size());
-        return result;
+        // Apply search if provided
+        if (search != null && !search.trim().isEmpty()) {
+            final var result = studentRepository.findBySearchTerm(search.trim(), pageable)
+                    .getContent()
+                    .stream()
+                    .map(studentMapper::toDto)
+                    .toList();
+            log.info("End Service: getAll with {} students (with search)", result.size());
+            return result;
+        } else {
+            final var result = studentRepository.findAll(pageable)
+                    .getContent()
+                    .stream()
+                    .map(studentMapper::toDto)
+                    .toList();
+            log.info("End Service: getAll with {} students", result.size());
+            return result;
+        }
     }
 
     public StudentDto create(StudentDto studentDto) {

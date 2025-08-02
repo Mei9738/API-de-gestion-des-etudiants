@@ -41,9 +41,10 @@ public class StudentApi {
     public List<StudentDto> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sort) {
-        log.info("Start Api: getAll with page={}, size={}, sort={}", page, size, sort);
-        final var result = studentService.getAll(page, size, sort);
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String search) {
+        log.info("Start Api: getAll with page={}, size={}, sort={}, search={}", page, size, sort, search);
+        final var result = studentService.getAll(page, size, sort, search);
         log.info("End Api: getAll with {} students", result.size());
         return result;
     }
