@@ -10,15 +10,43 @@ import org.example.project2.dto.StudentDto;
 import org.example.project2.exception.TechnicalException;
 import org.example.project2.service.StudentService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
+import java.util.List;
 
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/students")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 public class StudentApi {
     private final StudentService studentService;
+
+    @Operation(
+            summary = "Get All Students",
+            description = "Retrieve all student records",
+            responses = {
+                    @ApiResponse(
+                            description = "Students found",
+                            responseCode = "200",
+                            content = @Content(
+                                    schema = @Schema(implementation = StudentDto.class)
+                            )
+                    )
+            }
+    )
+    @GetMapping
+    public List<StudentDto> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sort) {
+        log.info("Start Api: getAll with page={}, size={}, sort={}", page, size, sort);
+        final var result = studentService.getAll(page, size, sort);
+        log.info("End Api: getAll with {} students", result.size());
+        return result;
+    }
 
     @Operation(
             summary = "Create Student",
@@ -38,7 +66,7 @@ public class StudentApi {
             }
     )
     @PostMapping
-    public StudentDto create(@RequestBody StudentDto studentDto) throws TechnicalException {
+    public StudentDto create(@RequestBody StudentDto studentDto) {
         log.info("Start Api: create");
         final var result = studentService.create(studentDto);
         log.info("End Api: create with student id {}", studentDto.id());
@@ -85,10 +113,15 @@ public class StudentApi {
             }
     )
     @DeleteMapping("{id}")
-    public void delete(@PathVariable UUID id) throws TechnicalException {
+    public void delete(@PathVariable UUID id) {
         log.info("Start Api: delete with student id {}", id);
-        studentService.delete(id);
-        log.info("End Api: delete with student id {}", id);
+        try {
+            studentService.delete(id);
+            log.info("End Api: delete with student id {} - SUCCESS", id);
+        } catch (Exception e) {
+            log.error("Error in delete API for student id {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Operation(
@@ -113,10 +146,15 @@ public class StudentApi {
             }
     )
     @PutMapping("{id}")
-    public StudentDto update(@PathVariable UUID id, @RequestBody StudentDto studentDto) throws TechnicalException {
-        log.info("Start Api: update with student id {}", id);
-        final var result = studentService.update(id, studentDto);
-        log.info("End Api: update with student id {}", id);
-        return result;
+    public StudentDto update(@PathVariable UUID id, @RequestBody StudentDto studentDto) {
+        log.info("Start Api: update with student id {} and student data: {}", id, studentDto);
+        try {
+            final var result = studentService.update(id, studentDto);
+            log.info("End Api: update with student id {} - SUCCESS", id);
+            return result;
+        } catch (Exception e) {
+            log.error("Error in update API for student id {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
 }
