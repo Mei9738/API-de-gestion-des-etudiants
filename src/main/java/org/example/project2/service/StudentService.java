@@ -73,6 +73,7 @@ public class StudentService {
         
         final var student = studentRepository.save(studentMapper.toEntity(studentDto));
         final var result = studentMapper.toDto(student);
+        log.debug("Student DTO ID after save: {}", result.id());  // Add this
 
         // Send notification asynchronously - don't fail the operation if notification fails
         try {
@@ -157,22 +158,12 @@ public class StudentService {
                 .orElseThrow(() -> new FunctionalException(
                         messages.get(GlobalConstants.ERROR_WS_STUDENT_NOT_FOUND, new Object[]{id.toString()}, Locale.FRENCH)
                 ));
-        
-        // First, try to delete notifications for this student from the notification service
-        try {
-            notificationClient.deleteNotificationsByStudentId(id);
-            log.info("Successfully deleted notifications for student id {}", id);
-        } catch (Exception e) {
-            log.warn("Failed to delete notifications for student id {}: {}", id, e.getMessage());
-            // Continue with student deletion even if notification deletion fails
-        }
-        
-        studentRepository.deleteById(id);
 
         // Send notification asynchronously - don't fail the operation if notification fails
         try {
             notificationClient.send(
                     NotificationDto.builder()
+                            .studentId(id)
                             .message(messages.get(GlobalConstants.NOTIFICATION_STUDENT_DELETED, new Object[]{studentFullName}, Locale.FRENCH))
                             .type(NotificationType.DELETE)
                             .build()
@@ -181,7 +172,18 @@ public class StudentService {
             log.warn("Failed to send notification for student deletion: {}", e.getMessage());
             // Don't throw exception - student was deleted successfully
         }
-        
+
+        // First, try to delete notifications for this student from the notification service
+        try {
+            notificationClient.deleteNotificationsByStudentId(id);
+            log.info("Successfully deleted notifications for student id {}", id);
+        } catch (Exception e) {
+            log.warn("Failed to delete notifications for student id {}: {}", id, e.getMessage());
+            // Continue with student deletion even if notification deletion fails
+        }
+
+        studentRepository.deleteById(id);
+
         log.info("End Service: delete with student id {}", id);
     }
 }
